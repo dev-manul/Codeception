@@ -19,22 +19,22 @@ class Metadata
     protected int|string|null $index = null;
 
     protected array $params = [
-        'env'        => [],
-        'group'      => [],
-        'depends'    => [],
-        'skip'       => null,
+        'env' => [],
+        'group' => [],
+        'depends' => [],
+        'skip' => null,
         'incomplete' => null,
     ];
 
-    protected array $current  = [];
+    protected array $current = [];
     protected array $services = [];
-    protected array $reports  = [];
+    protected array $reports = [];
 
     /** @var string[] */
     private array $beforeClassMethods = [];
 
     /** @var string[] */
-    private array $afterClassMethods  = [];
+    private array $afterClassMethods = [];
 
     public function getEnv(): array
     {
@@ -126,6 +126,16 @@ class Metadata
         return $this->getSkip() !== null || $this->getIncomplete() !== null;
     }
 
+    public function getIndexTextSuffix(): string
+    {
+        if (is_int($this->index)) {
+            return '#' . $this->index;
+        } elseif (is_string($this->index)) {
+            return '@' . $this->index;
+        }
+        return '';
+    }
+
     public function getFeature(): string
     {
         return $this->feature;
@@ -172,7 +182,7 @@ class Metadata
     {
         $this->params = array_merge_recursive(
             $this->params,
-            Annotation::fetchAllAnnotationsFromDocblock((string) $annotations)
+            Annotation::fetchAllAnnotationsFromDocblock((string)$annotations)
         );
         $this->setSingularValueForSomeParams();
     }
@@ -191,7 +201,7 @@ class Metadata
     {
         $params = [];
         foreach ($attributes as $attribute) {
-            $name      = lcfirst(str_replace('Codeception\\Attribute\\', '', (string) $attribute->getName()));
+            $name = lcfirst(str_replace('Codeception\\Attribute\\', '', (string)$attribute->getName()));
             $arguments = $attribute->getArguments();
 
             if ($attribute->isRepeated()) {
@@ -206,7 +216,7 @@ class Metadata
         foreach (['group', 'env', 'before', 'after', 'prepare'] as $single) {
             if (isset($this->params[$single]) && is_array($this->params[$single])) {
                 $this->params[$single] = array_merge(
-                    ...array_map(static fn($a): array => (array) $a, $this->params[$single])
+                    ...array_map(static fn($a): array => (array)$a, $this->params[$single])
                 );
             }
         }
