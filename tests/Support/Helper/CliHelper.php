@@ -25,6 +25,12 @@ class CliHelper extends \Codeception\Module
 
     public function executeCommand($command, bool $fail = true, $phpOptions = '')
     {
+        if ((int) getenv('COLUMNS') < 120) {
+            // Symfony Application::run() stamps COLUMNS with the detected terminal width,
+            // so on narrow/non-tty terminals inner codecept processes wrap their output
+            // and break output assertions. Ensure at least the width CI runs with.
+            putenv('COLUMNS=120');
+        }
         $this->getModule('Cli')->runShellCommand('php ' . $phpOptions . ' ' . \Codeception\Configuration::projectDir() . 'codecept ' . $command . ' -n', $fail);
     }
 
