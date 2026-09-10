@@ -17,6 +17,7 @@ class Metadata
     protected ?string $filename = null;
     protected string $feature = '';
     protected int|string|null $index = null;
+    protected ?int $position = null;
 
     protected array $params = [
         'env' => [],
@@ -134,6 +135,29 @@ class Metadata
             return '@' . $this->index;
         }
         return '';
+    }
+
+    /**
+     * Zero-based position of the example within its data set, independent of the key type.
+     */
+    public function setPosition(int $position): void
+    {
+        $this->position = $position;
+    }
+
+    public function getPosition(): ?int
+    {
+        return $this->position;
+    }
+
+    /**
+     * "#<position>" for an example of a data set, "" otherwise. Lets a group file address the
+     * examples of string-keyed data providers by their order ("test#0", "test#1", ...), the same
+     * way integer-keyed ones are addressed by getIndexTextSuffix().
+     */
+    public function getPositionTextSuffix(): string
+    {
+        return $this->position === null ? '' : '#' . $this->position;
     }
 
     public function getFeature(): string
