@@ -75,10 +75,12 @@ class Cest implements LoaderInterface
                     continue;
                 }
 
+                $position = 0;
                 foreach ($examples as $i => $example) {
                     $test = new CestFormat($unit, $method, $filename);
                     $test->getMetadata()->setCurrent(['example' => $example]);
                     $test->getMetadata()->setIndex($i);
+                    $test->getMetadata()->setPosition($position++);
                     $this->tests[] = $test;
                 }
             }

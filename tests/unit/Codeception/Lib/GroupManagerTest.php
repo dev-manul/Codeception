@@ -158,6 +158,60 @@ class GroupManagerTest extends \Codeception\Test\Unit
         new GroupManager(['important' => 'tests/data/group_manager_test/missing_directory']);
     }
 
+    public function testGroupsForIntegerKeyedExamples()
+    {
+        $file = 'tests/data/group_manager_test/UserTest.php';
+        $this->manager = new GroupManager([
+            'first' => [$file . ':testName#0'],
+            'second' => [$file . ':testName#1'],
+            'tenth' => [$file . ':testName#10'],
+            'whole' => [$file . ':testName'],
+        ]);
+        $example0 = $this->makeExample($file, 'testName', 0, 0);
+        $example1 = $this->makeExample($file, 'testName', 1, 1);
+        $example10 = $this->makeExample($file, 'testName', 10, 10);
+
+        $this->assertSame(['first', 'whole'], $this->manager->groupsForTest($example0));
+        $this->assertSame(['second', 'whole'], $this->manager->groupsForTest($example1));
+        // "#1" must not match example "#10" as a prefix
+        $this->assertSame(['tenth', 'whole'], $this->manager->groupsForTest($example10));
+    }
+
+    public function testGroupsForStringKeyedExamples()
+    {
+        $file = 'tests/data/group_manager_test/UserTest.php';
+        $this->manager = new GroupManager([
+            'by_key' => [$file . ':testName@head manager'],
+            'by_position' => [$file . ':testName#1'],
+            'other_position' => [$file . ':testName#0'],
+            'whole' => [$file . ':testName'],
+        ]);
+        // second example of a data provider with string keys
+        $example = $this->makeExample($file, 'testName', 'head manager', 1);
+
+        $this->assertSame(['by_key', 'by_position', 'whole'], $this->manager->groupsForTest($example));
+    }
+
+    public function testExampleSuffixDoesNotMatchOtherTests()
+    {
+        $file = 'tests/data/group_manager_test/UserTest.php';
+        $this->manager = new GroupManager(['important' => [$file . ':testName#0']]);
+
+        $this->assertNotContains('important', $this->manager->groupsForTest($this->makeTestCase($file, 'testName')));
+        $this->assertNotContains('important', $this->manager->groupsForTest($this->makeExample($file, 'testNameLong', 0, 0)));
+        $this->assertNotContains('important', $this->manager->groupsForTest($this->makeExample($file, 'testName', 'key', 2)));
+    }
+
+    public function testPlainNameStillMatchesAsPrefix()
+    {
+        $file = 'tests/data/group_manager_test/UserTest.php';
+        $this->manager = new GroupManager(['important' => [$file . ':testName']]);
+
+        $this->assertContains('important', $this->manager->groupsForTest($this->makeTestCase($file, 'testName')));
+        $this->assertContains('important', $this->manager->groupsForTest($this->makeExample($file, 'testName', 'key', 0)));
+        $this->assertContains('important', $this->manager->groupsForTest($this->makeTestCase($file, 'testNameLong')));
+    }
+
     protected function makeTestCase(string $file, string $name = ''): TestCaseWrapper
     {
         $testcase = new TestCaseWrapper(clone $this);
@@ -165,6 +219,15 @@ class GroupManagerTest extends \Codeception\Test\Unit
         $metadata = $testcase->getMetadata();
         $metadata->setName($name);
         $metadata->setFilename(codecept_root_dir() . $file);
+
+        return $testcase;
+    }
+
+    protected function makeExample(string $file, string $name, int|string $index, int $position): TestCaseWrapper
+    {
+        $testcase = $this->makeTestCase($file, $name);
+        $testcase->getMetadata()->setIndex($index);
+        $testcase->getMetadata()->setPosition($position);
 
         return $testcase;
     }

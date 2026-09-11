@@ -144,12 +144,16 @@ class GroupManager
         $filename = realpath($test->getFileName());
         $testName = $test->getName();
         $groups = $test->getMetadata()->getGroups();
-        $indexName = $test->getMetadata()->getIndexTextSuffix();
+        $fullName = $filename . ':' . $testName;
+        $exampleSuffixes = array_unique(array_filter([
+            $test->getMetadata()->getIndexTextSuffix(),
+            $test->getMetadata()->getPositionTextSuffix(),
+        ], fn(string $suffix): bool => $suffix !== ''));
 
         foreach ($this->testsInGroups as $group => $tests) {
             /** @var string[] $tests */
             foreach ($tests as $testPattern) {
-                if ($filename == $testPattern || str_starts_with($filename . ':' . $testName . $indexName, $testPattern)) {
+                if ($filename == $testPattern || $this->matchesTest($fullName, $exampleSuffixes, $testPattern)) {
                     $groups[] = $group;
                 }
                 if (
@@ -162,5 +166,25 @@ class GroupManager
         }
 
         return array_unique($groups);
+    }
+
+    /**
+     * A pattern without an example suffix ("file:test", or any shorter prefix) matches the test and all
+     * of its examples. A pattern with an example suffix ("file:test#1", "file:test@key") must match the
+     * example exactly by its data set key or by its position, so that "#1" does not match "#10".
+     *
+     * @param string[] $exampleSuffixes
+     */
+    private function matchesTest(string $fullName, array $exampleSuffixes, string $testPattern): bool
+    {
+        if (strlen($testPattern) <= strlen($fullName)) {
+            return str_starts_with($fullName, $testPattern);
+        }
+        foreach ($exampleSuffixes as $suffix) {
+            if ($testPattern === $fullName . $suffix) {
+                return true;
+            }
+        }
+        return false;
     }
 }
